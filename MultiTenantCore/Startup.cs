@@ -1,39 +1,47 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MonteOlimpo.Base.ApiBoot;
-using MultiTenantCore.Service.Alunos;
-using System.Collections.Generic;
-using System.Reflection;
+using Microsoft.Extensions.Logging;
+using SaasKit.Multitenancy.StructureMap;
+using StructureMap;
+using System;
 
-namespace MultiTenantCore
+namespace AspNetStructureMapSample
 {
-    public class Startup : MonteOlimpoBootStrap
+    public class Startup
     {
-        public Startup(IConfiguration configuration)
-             : base(configuration)
+        // This method gets called by the runtime. Use this method to add services to the container.
+        // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
+        public IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            
+            services.AddMultitenancy<AppTenant, AppTenantResolver>();
+
+            var container = new Container();
+            services.AddControllers();
+            container.Populate(services);
+
+
+            container.Configure(c =>
+            {
+                c.For<ITenantContainerBuilder<AppTenant>>().Use(() => new AppTenantContainerBuilder(container));
+            });
+
+            return container.GetInstance<IServiceProvider>();
         }
 
-        public override void ConfigureServices(IServiceCollection services)
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app)
         {
-            services.AddMultitenancy<Portal, PortalResolver>();
-            base.ConfigureServices(services);
+            app.UseMultitenancy<AppTenant>();
+            app.UseTenantContainers<AppTenant>();
+
+            app.UseRouting();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
-
-
-        public override void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            app.UseMultitenancy<Portal>();
-
-            base.Configure(app, env);
-        }
-
-        protected override IEnumerable<Assembly> GetAditionalAssemblies()
-        {
-            yield return typeof(AlunoService).Assembly;
-        }
-
     }
 }

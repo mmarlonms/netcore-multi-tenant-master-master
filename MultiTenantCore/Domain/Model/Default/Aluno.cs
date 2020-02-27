@@ -1,10 +1,8 @@
-﻿namespace MultiTenantCore.Domain.Model
+﻿namespace MultiTenantCore.Domain.Model.Default
 {
     public class Aluno
     {
         public string Nome { get; set; }
         public int Idade { get; set; }
-
-        public string PortalName { get; set; }
     }
 }
